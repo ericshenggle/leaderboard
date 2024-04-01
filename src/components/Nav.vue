@@ -4,7 +4,7 @@
     <el-col :span="6">
       <el-menu :default-active="currentRoute" class="el-menu-demo" mode="horizontal" active-text-color="#5698c3" router>
         <el-menu-item index="/">HomePage</el-menu-item>
-        <el-sub-menu v-if="isLogin" :default-active="currentRoute">
+        <el-sub-menu v-if="this.$store.state.isAuthenticated" :default-active="currentRoute">
           <template #title>My Account</template>
 <!--          <el-menu-item index="/user/home">Home</el-menu-item>-->
           <el-menu-item index="/updatePwd">UpdatePwd</el-menu-item>

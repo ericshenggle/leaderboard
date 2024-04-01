@@ -53,7 +53,6 @@
             <el-upload
                 ref="upload"
                 class="upload-demo"
-                action="https://example.com/upload"
                 drag
                 :auto-upload="false"
                 :on-change="handleFileChange"
@@ -66,6 +65,12 @@
             <div class="el-upload__tip" slot="tip">Only SQL files are accepted</div>
             </el-upload>
             <el-button type="primary" @click="submitUpload">Submit</el-button>
+            <!-- show the result of the query -->
+            <div v-if="runResult" style="margin-top: 20px;">
+              <p><strong>Your current rank:</strong> {{ runResult.currentRank }}  &nbsp;
+                <strong>Current Execution Time:</strong> {{ runResult.executionTime }} seconds
+              </p>
+            </div>
           </el-card>
         </el-col>
         <el-col :span="16">
@@ -140,12 +145,7 @@ export default {
         "TIMEOUT": "error",
         "INVALID": "error",
       },
-      myNotifyMessage: {
-        "RIGHT": "Congratulations! Your sql script is correct.",
-        "WRONG": "Sorry, your sql script is incorrect, please check and try again.",
-        "TIMEOUT": "Sorry, the sql script execution time exceeds the limit, please optimize and try again.",
-        "INVALID": "Wrong sql script format, please check and try again.",
-      },
+      runResult: null,
     };
   },
   computed: {
@@ -217,14 +217,18 @@ export default {
           const fileData = e.target.result.replace(/--.*\n/g, '').replace(/[\t\n\r]/g, ' ');
           formData.append('sql', fileData);
           formData.append('userId', this.$store.state.user.userId);
-
-          this.$axios.post(`/problems/run/${this.problemId}`, formData).then((response) => {
+          this.$axios.post(`/problems/run/${this.problemId}`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }).then((response) => {
+            console.log(response);
             if (response.data.status === 200) {
-              const result = Response.data.data.result;
+              this.runResult = Response.data.data;
               this.$notify({
                 title: 'Notification',
-                message: this.myNotifyMessage[result],
-                type: this.myNotifyType[result]
+                message: this.runResult.message,
+                type: this.myNotifyType[this.runResult.status]
               });
               this.getLeaderboardData(); // get the latest leaderboard data
             } else {
@@ -252,6 +256,7 @@ export default {
   },
   mounted() {
     this.problemId = this.$route.params.id;
+    console.log(this.problemId);
     this.getQuestionData();
     this.leaderboardLoading = true;
     this.getLeaderboardData();

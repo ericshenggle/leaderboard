@@ -66,19 +66,19 @@ export default {
       }
       if (this.loginForm.userType === "user") {
         console.log("user login");
-        console.log(this.loginForm.username);
-        console.log(this.loginForm.password);
-        this.$axios
-        .post("/userLogin/", {
-          username: this.loginForm.username,
-          userpwd: this.loginForm.password
-        })              // the format of the data: {userName: "user", userPwd: "user"}
-        .then((Response) => {
+        const formData = new FormData();
+        formData.append("username", this.loginForm.username);
+        formData.append("userpwd", this.loginForm.password);
+        this.$axios.post("/userLogin/", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }).then((Response) => {
           console.log(Response);
           if (Response.data.status === 200){
             this.$message.success("Login Successful");
             this.$store.commit("login", Response.data.data);
-            this.$router.push({ name: "Home" });
+            this.$router.push({ name: "home" });
           } else {
             this.$message.warning(Response.data.message);
           }

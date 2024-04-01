@@ -62,6 +62,10 @@ export default {
           username: this.updateForm.username,
           originpwd: this.updateForm.origin,
           userpwd: this.updateForm.password
+        }, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         })
         .then((Response) => {
           if (Response.data.status === 200) {

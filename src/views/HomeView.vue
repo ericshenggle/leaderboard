@@ -1,6 +1,8 @@
 <template>
+  <div>
+    <p>Filter</p>
+  </div>
   <el-row justify="center" class="filter-row">
-    <el-col>Filter</el-col>
     <el-col :span="6">
       <el-input v-model="filterByName" placeholder="Filter by Question Name"></el-input>
     </el-col>
@@ -15,12 +17,13 @@
       </el-date-picker>
     </el-col>
     <el-col :span="1"></el-col>
-    <el-col :span="6">
+    <el-col :span="2">
       <el-select
           v-model="filterByDatabaseInstance"
           filterable
           placeholder="Select Database Instance"
-          style="width: 100%;">
+          style="width: 100%;"
+          clearable>
         <el-option
             v-for="item in databaseInstances"
             :key="item"
@@ -29,11 +32,22 @@
         </el-option>
       </el-select>
     </el-col>
+    <el-col :span="6">
+      <el-switch
+        v-model="isActive"
+        active-text="Show active questions"
+        inactive-text="Show all questions">
+      </el-switch>
+    </el-col>
   </el-row>
   <el-divider></el-divider>
   <el-row justify="center">
     <el-table :data="paginatedData" border style="width: 70%" max-height="500px" v-loading="loading">
-      <el-table-column prop="startTime" label="Start Time"> </el-table-column>
+      <el-table-column label="Start Time">
+        <template #default="scope">
+          {{ formatDate(scope.row.startTime) }}
+        </template>
+      </el-table-column>
       <el-table-column label="Question Name" width="500">
         <template #default="scope">
           <el-link @click="handleDetail(scope.row.problemId)" >{{ scope.row.name }}</el-link>
@@ -89,6 +103,7 @@ export default {
       filterByName: '',
       filterByStartTime: '',
       filterByDatabaseInstance: '',
+      isActive: true,
       databaseInstances: ['TPC-C', 'TPC-H', 'TPC-DS'], // This should be fetched from the server
     }
   },
@@ -98,8 +113,9 @@ export default {
         const matchesName = this.filterByName ? row.name.toLowerCase().includes(this.filterByName.toLowerCase()) : true;
         const matchesStartTime = this.filterByStartTime ? new Date(row.startTime) >= new Date(this.filterByStartTime[0]) &&
             new Date(row.startTime) <= new Date(this.filterByStartTime[1]) : true;
-        const matchesDatabaseInstance = this.filterByDatabaseInstance ? row.databaseInstance === this.filterByDatabaseInstance : true;
-        return matchesName && matchesStartTime && matchesDatabaseInstance;
+        const matchesDatabaseInstance = this.filterByDatabaseInstance ? row.dbInstance === this.filterByDatabaseInstance : true;
+        const matchesIsActive = this.isActive ? new Date(row.deadline) > new Date() : true;
+        return matchesName && matchesStartTime && matchesDatabaseInstance && matchesIsActive;
       });
     },
     paginatedData() {
@@ -130,20 +146,26 @@ export default {
     },
     handleDetail(id) {
       // Judge whether the user has logged in
-      // if (!this.$store.state.isAuthenticated) {
-      //   this.$message.error('Please log in first');
-      //   return;
-      // }
-      this.$router.push({ name: 'question', params: { id } });
+      if (!this.$store.state.isAuthenticated) {
+        this.$router.push({ name: 'login' });
+        this.$message.error('Please log in first');
+      }
+      else {
+        this.$router.push({ name: 'question', params: { id } });
+      }
     },
     format(percentage) {
       return percentage === 100 ? 'Terminate' : `In progress`
+    },
+    formatDate(dateString) {
+      const options = { year: 'numeric', month: 'long', day: 'numeric' };
+      return new Date(dateString).toLocaleDateString('en-US', options);
     },
     getDatabaseInstanceOptions() {
       this.databaseInstances = [...new Set(this.tableData.map(row => row.dbInstance))];
     },
     getTableData() {
-      this.$axios.get('/competitions/').then((Response) => {
+      this.$axios.get('/problems/all/').then((Response) => {
         if (Response.data.status === 200) {
           this.tableData = Response.data.data;
           this.loading = false;

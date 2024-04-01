@@ -37,13 +37,32 @@ import Nav from "@/components/Nav.vue";
 
 export default {
   components: {Nav},
+  methods: {
+    saveToLocalStorage() {
+      const now = new Date().getDate();
+      const expire = now + 60 * 60 * 12 * 1000;
+      const data = {
+        userMsg: this.$store.state,
+        expire: expire
+      };
+      localStorage.setItem("userMsg", JSON.stringify(data));
+    },
+    getFromLocalStorage() {
+      const data = JSON.parse(localStorage.getItem("userMsg"));
+      if (data && data.expire > new Date().getDate()) {
+        this.$store.replaceState(Object.assign(this.$store.state, data.userMsg));
+      } else if (data && data.expire < new Date().getDate()) {
+        localStorage.removeItem("userMsg");
+      }
+    }
+  },
   created() {
     //load the userMsg from localStorage to vuex store
-    localStorage.getItem("userMsg") && this.$store.replaceState(Object.assign(this.$store.state,JSON.parse(localStorage.getItem("userMsg"))));
+    this.getFromLocalStorage();
 
     //store the userMsg from vuex store to localStorage before the page is closed or refreshed
     window.addEventListener("beforeunload",()=>{
-      localStorage.setItem("userMsg",JSON.stringify(this.$store.state))
+      this.saveToLocalStorage()
     })
   }
 };
