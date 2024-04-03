@@ -92,9 +92,9 @@ export default {
         },
       ],
       customColors: [
-        { color: '#f56c6c', percentage: 80 },
-        { color: '#e6a23c', percentage: 60 },
-        { color: '#5cb87a', percentage: 0 }
+        { color: '#f56c6c', percentage: 90 },
+        { color: '#e6a23c', percentage: 70 },
+        { color: '#5cb87a', percentage: 40 }
       ],
       currentPage: 1,
       pageSize: 10,
@@ -142,6 +142,7 @@ export default {
       const totalDuration = endDate - startDate;
       const elapsed = today - startDate;
       const progress = (elapsed / totalDuration) * 100;
+      console.log(Math.round(Math.min(Math.max(progress, 0), 100)));
       return Math.round(Math.min(Math.max(progress, 0), 100));
     },
     handleDetail(id) {
@@ -163,12 +164,16 @@ export default {
     },
     getDatabaseInstanceOptions() {
       this.databaseInstances = [...new Set(this.tableData.map(row => row.dbInstance))];
+      console.log(this.databaseInstances);
     },
     getTableData() {
       this.$axios.get('/problems/all/').then((Response) => {
         if (Response.data.status === 200) {
+          console.log(Response.data);
           this.tableData = Response.data.data;
           this.loading = false;
+          this.getDatabaseInstanceOptions();
+          this.total = this.tableData.length;
         } else {
           this.tableData = [];
           this.loading = false;
@@ -183,8 +188,6 @@ export default {
   mounted() {
     // Get the table data from the server
     this.getTableData();
-    this.getDatabaseInstanceOptions();
-    this.total = this.tableData.length;
   },
 }
 </script>

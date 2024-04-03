@@ -5,7 +5,7 @@
             <div slot="header" class="clearfix">
               <span>SQL Challenge: {{ questionData.name }}</span>
             </div>
-            <el-descriptions title="Question Detail" direction="vertical" column="4">
+            <el-descriptions title="Question Detail" direction="vertical" column="4" v-loading.fullscreen.lock="dataLoading">
               <el-descriptions-item label="Start Time">{{ formatDate(questionData.startTime) }}</el-descriptions-item>
               <el-descriptions-item label="Deadline">{{ formatDate(questionData.deadline) }}</el-descriptions-item>
               <el-descriptions-item label="Database Instance">{{ questionData.dbInstance }}</el-descriptions-item>
@@ -33,10 +33,10 @@
                 stripe
                 height="150px">
               <el-table-column
-                  v-for="(header, index) in questionData.expectedOutput[0]"
-                  :key="index"
-                  :prop="'col' + index"
-                  :label="header">
+                  v-for="col in Object.keys(formattedExpectedOutput[0])"
+                  :key="col"
+                  :prop="col"
+                  :label="col">
               </el-table-column>
             </el-table>
           </el-card>
@@ -45,7 +45,7 @@
       </el-row>
 
       <el-row :gutter="20" style="margin-top: 20px;">
-        <el-col :span="8">
+        <el-col :span="14">
           <el-card>
             <div slot="header" class="clearfix">
               <span>Upload your SQL script</span>
@@ -68,19 +68,18 @@
             <!-- show the result of the query -->
             <div v-if="runResult" style="margin-top: 20px;">
               <p><strong>Your current rank:</strong> {{ runResult.currentRank }}  &nbsp;
-                <strong>Current Execution Time:</strong> {{ runResult.executionTime }} seconds
+                <strong>Current Execution Time:</strong> {{ runResult.executionTime }} ms
               </p>
             </div>
           </el-card>
         </el-col>
-        <el-col :span="16">
+        <el-col :span="10">
           <el-card>
             <div slot="header" class="clearfix">
               <span>Leaderboard</span>
             </div>
             <div v-if="currentUserScore" class="current-user-score">
               <p><strong>Your Rank:</strong> {{ currentUserScore.rank }}</p>
-              <p><strong>Your Score:</strong> {{ currentUserScore.score }}</p>
             </div>
             <el-skeleton :loading="leaderboardLoading" animated>
               <template #template>
@@ -94,7 +93,6 @@
                 highlight-current-row>
               <el-table-column prop="rank" label="Rank"></el-table-column>
               <el-table-column prop="username" label="Username"></el-table-column>
-              <el-table-column prop="score" label="Score"></el-table-column>
             </el-table>
             </el-skeleton>
           </el-card>
@@ -113,7 +111,19 @@ export default {
         deadline: "2024-03-28T00:00",
         name: "Top 10 Stocks in Singapore",
         description: "Select the top 10 stocks in the warehouse in Singapore that have the highest quantity of stock.",
-        expectedOutput: [["stockId", "stockName", "quantity"], [1, "stock1", 100], [2, "stock2", 90]],
+        expectedOutput: [{
+          "Stock ID": "1",
+          "Stock Name": "Stock1",
+          "Quantity": "100",
+        }, {
+          "Stock ID": "2",
+          "Stock Name": "Stock2",
+          "Quantity": "90",
+        }, {
+          "Stock ID": "3",
+          "Stock Name": "Stock3",
+          "Quantity": "80",
+        }],
         benchmarkTime: 0.5,
         dbInstance: "TPC-C",
       },
@@ -121,17 +131,14 @@ export default {
         {
           rank: 1,
           username: "user1",
-          score: 80,
         },
         {
           rank: 2,
           username: "user2",
-          score: 60,
         },
         {
           rank: 3,
           username: "user3",
-          score: 40,
         },
       ],
       currentUserScore: null,
@@ -150,13 +157,12 @@ export default {
   },
   computed: {
     formattedExpectedOutput() {
-      const dataRows = this.questionData.expectedOutput.slice(1);
-      return dataRows.map(row => {
-        const rowData = {};
-        row.forEach((item, index) => {
-          rowData['col' + index] = item;
+      return this.questionData.expectedOutput.map((row) => {
+        const newRow = {};
+        Object.keys(row).forEach((key) => {
+          newRow[`${key}`] = row[key];
         });
-        return rowData;
+        return newRow;
       });
     },
   },
@@ -167,6 +173,7 @@ export default {
         .then((Response) => {
           if (Response.data.status === 200) {
             this.questionData = Response.data.data;
+            console.log(this.questionData);
             this.questionData.expectedOutput = JSON.parse(Response.data.data.expectedOutput);
             this.dataLoading = false;
           } else {
@@ -184,6 +191,7 @@ export default {
         .then((Response) => {
           if (Response.data.status === 200) {
             this.questionLeaderboard = Response.data.data.leaderboard;
+            console.log(this.questionLeaderboard);
             const currentUser = this.$store.state.user.username; // get the current user
             this.currentUserScore = this.questionLeaderboard.find((user) => user.username === currentUser) || null;
             this.leaderboardLoading = false;
@@ -217,26 +225,34 @@ export default {
           const fileData = e.target.result.replace(/--.*\n/g, '').replace(/[\t\n\r]/g, ' ');
           formData.append('sql', fileData);
           formData.append('userId', this.$store.state.user.userId);
+          console.log(formData.get('sql'));
           this.$axios.post(`/problems/run/${this.problemId}`, formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
             },
-          }).then((response) => {
-            console.log(response);
-            if (response.data.status === 200) {
+          }).then((Response) => {
+            console.log(Response);
+            if (Response.data.status === 200) {
               this.runResult = Response.data.data;
+              console.log(this.runResult);
               this.$notify({
                 title: 'Notification',
                 message: this.runResult.message,
                 type: this.myNotifyType[this.runResult.status]
               });
+              this.$refs.upload.clearFiles(); // clear the uploaded file(s)
               this.getLeaderboardData(); // get the latest leaderboard data
             } else {
-              this.$message.warning(response.data.message);
+              this.$message.warning(Response.data.message);
               this.leaderboardLoading = false
             }
           }).catch((error) => {
-            this.$message.error('An error occurred.');
+            if (error.response.status === 400) {
+              console.log(error.response.data.data);
+              this.$message.error(error.response.data.message);
+            } else {
+              this.$message.error('An error occurred.');
+            }
             this.leaderboardLoading = false;
             console.error(error);
           });
@@ -248,10 +264,24 @@ export default {
       return new Date(dateString).toLocaleDateString('en-US', options);
     },
     beforeRemove(file, fileList) {
-      return this.$confirm(`Do you want to remove ${file.name}?`);
+      return this.$confirm(`Do you want to remove ${file.name}?`, 'Remove file', {
+        confirmButtonText: 'OK',
+        cancelButtonText: 'Cancel',
+      }).then(() => {
+        this.$message({
+          type: 'success',
+          message: 'File removed successfully'
+        });
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: 'Remove canceled'
+        });
+        return false;
+      });
     },
     handleExceed(files, fileList) {
-      this.$message.warning(`The number of files selected exceeds the limit of ${this.limit}.`);
+      this.$message.warning(`The number of files selected exceeds the limit of 1.`);
     }
   },
   mounted() {

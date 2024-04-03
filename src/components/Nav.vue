@@ -1,11 +1,11 @@
 <template>
   <el-row justify="space-between">
     <el-col :span="6" class="icon">SQL Leaderboard</el-col>
-    <el-col :span="6">
+    <el-col :span="8">
       <el-menu :default-active="currentRoute" class="el-menu-demo" mode="horizontal" active-text-color="#5698c3" router>
         <el-menu-item index="/">HomePage</el-menu-item>
         <el-sub-menu v-if="this.$store.state.isAuthenticated" :default-active="currentRoute">
-          <template #title>My Account</template>
+          <template #title>My Account, &nbsp;{{ this.$store.state.user.username }}</template>
 <!--          <el-menu-item index="/user/home">Home</el-menu-item>-->
           <el-menu-item index="/updatePwd">UpdatePwd</el-menu-item>
           <el-menu-item @click="logout">Logout</el-menu-item>
@@ -32,6 +32,7 @@ export default {
   methods: {
     logout() {
       this.$store.commit('logout');
+      this.$router.push({ name: 'home' });
     },
     handleLogin() {
       this.isLogin = this.$store.state.isAuthenticated;
@@ -51,7 +52,7 @@ export default {
 .icon {
   width: 300px;
   padding-left: 50px;
-  font-size: 40px;
+  font-size: 30px;
   color: rgb(126, 176, 255);
 }
 </style>

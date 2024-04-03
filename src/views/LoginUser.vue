@@ -69,6 +69,8 @@ export default {
         const formData = new FormData();
         formData.append("username", this.loginForm.username);
         formData.append("userpwd", this.loginForm.password);
+        console.log(formData.get("username"));
+        console.log(formData.get("userpwd"));
         this.$axios.post("/userLogin/", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
@@ -84,7 +86,11 @@ export default {
           }
         })
         .catch((failResponse) => {
-          console.log(failResponse);
+          if (failResponse.response.status === 400) {
+            this.$message.warning("Incorrect username or password");
+          } else {
+            console.log(failResponse);
+          }
         });
       }
     },

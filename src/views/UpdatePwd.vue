@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="register">
-      <el-form :inline="true" :rules="rules" label-position="left" label-width="80px" :model="registerForm">
+      <el-form :inline="true" :rules="rules" label-position="left" label-width="80px" :model="updateForm">
         <el-form-item prop="username">
           <span slot="label" style="font-weight:bold">Username</span>
           <el-input v-model="updateForm.username" placeholder="Please enter your username" class="regInput"></el-input>
@@ -23,7 +23,7 @@
         </el-form-item>
         <br />
         <br />
-        <el-button type="primary" @click="register" style="width:100px;height:40px">Register</el-button>
+        <el-button type="primary" @click="register" style="width:100px;height:40px">Update</el-button>
       </el-form>
     </div>
   </div>
@@ -76,6 +76,9 @@ export default {
           }
         })
         .catch((failResponse) => {
+          if (failResponse.response.status === 400) {
+            this.$message.warning(failResponse.response.data.message);
+          }
           console.log(failResponse);
         });
     },
