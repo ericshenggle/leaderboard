@@ -3,21 +3,25 @@
     <p>Filter</p>
   </div>
   <el-row justify="center" class="filter-row">
-    <el-col :span="6">
-      <el-input v-model="filterByName" placeholder="Filter by Question Name"></el-input>
+    <el-col :span="2">
+      Start Time
     </el-col>
-    <el-col :span="1"></el-col>
-    <el-col :span="6">
+    <el-col :span="4">
       <el-date-picker
           v-model="filterByStartTime"
           type="daterange"
-          start-placeholder="Start Date"
-          end-placeholder="End Date"
+          start-placeholder="From"
+          end-placeholder="To"
           style="width: 100%">
       </el-date-picker>
     </el-col>
-    <el-col :span="1"></el-col>
-    <el-col :span="2">
+    <el-col :span="3">
+      Question Name
+    </el-col>
+    <el-col :span="6">
+      <el-input v-model="filterByName" placeholder="Filter by Question Name"></el-input>
+    </el-col>
+    <el-col :span="3">
       <el-select
           v-model="filterByDatabaseInstance"
           filterable
